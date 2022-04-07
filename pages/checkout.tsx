@@ -1,5 +1,6 @@
 
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { findTransactionSignature, FindTransactionSignatureError } from "@solana/pay";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Keypair, Transaction } from "@solana/web3.js";
 import { useRouter } from "next/router";
@@ -89,6 +90,26 @@ export default function Checkout() {
   useEffect(() => {
     trySendTransaction()
   }, [transaction])
+
+  // Check every 0.5s if the transaction is completed
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        // Check if there is any transaction for the reference
+        const signatureInfo = await findTransactionSignature(connection, reference, {})
+        console.log('They paid!!!')
+      } catch (e) {
+        if (e instanceof FindTransactionSignatureError) {
+          // No transaction found yet, ignore this error
+          return;
+        }
+        console.error('Unknown error', e)
+      }
+    }, 500)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
 
   if (!publicKey) {
     return (
